@@ -1,0 +1,76 @@
+<html>
+<head>
+    <title>Tic Tac Toe Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .row {
+            display: block;
+        }
+        .cell {
+            border: 1px solid #999;
+            width: 100px;
+            height: 100px;
+            text-transform: uppercase;
+            text-align: center;
+            display: inline-block;
+            margin: 5px;
+            font-size: 24px;
+            box-sizing: border-box;
+            vertical-align: top;
+        }
+        .cell:hover {
+            background-color: #e0e0e0;
+        }
+
+        .cell > .content {
+            display:flex; 
+            text-transform: uppercase; 
+            align-items: center; 
+            justify-content: center;
+            height: 100%; 
+            width: 100%;
+        }
+
+        .action {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic Tac Toe Game</h1>
+    <div class="status">X's Turn</div>
+
+    <div class="board">
+        <div class="row">
+            <div class="cell"><div class="content">X</div></div>
+            <div class="cell"></div>
+            <div class="cell"></div>            
+        </div>
+        <div class="row">
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"><div class="content">O</div></div>
+        </div>
+        <div class="row">
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"><div class="content">O</div></div>
+        </div>
+    </div>
+
+    <input type="button" class="action" value="Start Game">
+    <br><br>
+    <a href="https://en.wikipedia.org/wiki/Tic-tac-toe" target="_blank">Learn Game</a>
+</body>
+</html>
