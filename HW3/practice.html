@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Times Table</title>
+<style type="text/css">
+    .red {color: #ff0000}    
+</style>
+</head>
+
+<body>
+    <script language="javascript">
+		
+        function timesTable(number) {
+            for (let i = 1; i <= 12; i++) {
+                document.write(number + " x " + i + " = " + (i * number) + "<br>");
+            }
+        }
+
+        function fahr2cels(ftemp) {
+            return (ftemp - 32) * 5/9;
+        }
+
+        do {
+            n = prompt("Enter a number")
+        } while (isNaN(n));
+
+        document.write("The number is: "+ n +"<br><br>")
+        timesTable(n);
+        document.write("<br><br>Fahrenheit to Celsius:<br><br>");
+        let ftemps = [-5, 32, 68, 90];
+        for (let ftemp of ftemps) {
+            document.write(ftemp + " F = " + fahr2cels(ftemp).toFixed(2) + " C<br>");
+        }
+        document.write("120 F = " + fahr2cels(120).toFixed(2) + " C Welcome to Texas :) <br>");
+    </script>
+</body>
+</html>

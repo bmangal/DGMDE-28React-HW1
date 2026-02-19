@@ -1,0 +1,86 @@
+<!-- https://bmangal.github.io/DGMDE-28React-HW1/HW2/ttt_v1.html -->
+<html>
+<head>
+    <title>Tic Tac Toe Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .square {
+            border: 1px solid #999;
+            width: 100px;
+            height: 100px;
+            text-transform: uppercase;
+            display: inline-block;
+            margin: 5px;
+            font-size: 24px;
+            box-sizing: border-box;
+            vertical-align: top;
+            padding: 35px;
+        }
+
+        .square:hover {
+            background-color: #e0e0e0;
+        }
+
+        .action {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+
+        .status {
+            font-size: 18px;
+            border: 2px solid #333; 
+            display: inline-block; padding: 8px 20px; 
+            border-radius: 8px;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Tic Tac Toe Game</h1>
+    <div class="status">X's Turn</div>
+
+    <div class="board">
+        <script>
+            const NUM_SQUARES = 9;
+            for (i=0; i<NUM_SQUARES; i++)
+            {
+                id = "sq"+i;
+                document.write( "<div class='square' id='" + id + "'></div>" );
+            }
+
+            // Find all square divs and insert a <br /> after every 3rd square
+            window.onload = function() {
+                const board = document.querySelector('.board');
+                const squares = board.querySelectorAll('.square');
+
+                for (let i = 0; i < NUM_SQUARES; i++) {
+                    const square = squares[i];
+
+                    // Fill in some squares with 'X' and 'O'
+                    if (i == 0) {
+                        square.innerText = 'X';
+                    }
+                    else if ((i == 5) || (i == 8)) {
+                        square.innerText = 'O';
+                    }
+
+                    // Add a line break after every 3rd square
+                    if ((i + 1) % 3 === 0) {
+                        square.outerHTML += "<br />"; 
+                    }
+                }
+            };
+        </script>
+    </div>
+
+    <input type="button" class="action" value="Start Game">
+    <br><br>
+    <a href="https://en.wikipedia.org/wiki/Tic-tac-toe" target="_blank">Learn Game</a>
+</body>
+</html>
