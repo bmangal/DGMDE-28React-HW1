@@ -1,0 +1,135 @@
+<!-- https://bmangal.github.io/DGMDE-28React-HW1/HW6/joes2.html -->
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Class Demo</title>
+<script>
+
+    // Class to represent a menu item with name and price
+	class MenuItem
+	{
+		name;
+        price;
+		
+		constructor(name, price)
+        {
+            this.name = name;
+            this.price = price;
+        }   
+		showMenuItem() 
+		{
+			var s = this.name + ": $" + this.price
+			return s
+		}
+	} // MenuItem Class
+
+   // Function to create a menu from an array of objects
+   function printMenu(menuArray) {
+       var s = "Menu:<br><ul>";
+       for (var item of menuArray) {
+           s += "<li>" + item.name + ": $" + item.price + "</li>";
+       }
+       s += "</ul>";
+       return s;
+   }
+
+   // Function to add selected item to the cart
+   function addToCart() {
+       var select = document.getElementById("menu");
+       var selectedItem = select.options[select.selectedIndex].text;
+       // Increment the count for the selected item in the cart
+       cartItemsCount[selectedItem]++;
+
+       // Update the cart display
+       updateCart();
+   }
+
+   function updateCart() {
+       var cartItems = document.getElementById("cartItems");
+       // Clear the current cart display and overwrite it based on the updated item counts
+       cartItems.innerHTML = cartDisplay();
+    }
+
+    function cartDisplay() {
+        var s = "";
+        for (var item in cartItemsCount) {
+            if (cartItemsCount[item] > 0) {
+                s += "<li>" + item + ": " + cartItemsCount[item] + "</li>";
+            }
+        }
+        return s;
+    }
+
+    function cartPlainTextDisplayWithSubtotal() {
+        var s = "";
+        var total = 0;
+        for (var item in cartItemsCount) {
+            var count = cartItemsCount[item];
+            var price = menuList.find(i => i.name === item).price;
+            var subtotal = count * price;
+            if (count > 0) {
+                s += count + " x " + item + " ($" + price.toFixed(2) + ")" + " = $" + subtotal.toFixed(2);
+                s += "\n";
+                total += subtotal;
+            }
+        }
+        s += "\n";
+        s += "Total: $" + total.toFixed(2);
+        return s;
+    }
+
+    // Function to clear the cart
+    function clearCart() {
+        for (var item in cartItemsCount) {
+            // Reset count for each item to 0
+            cartItemsCount[item] = 0;
+        }
+        // Update the cart display
+        updateCart();
+    }
+
+    function checkout() {
+        var s = cartPlainTextDisplayWithSubtotal();
+        alert(s);
+
+        // Clear the cart after checkout
+        clearCart();
+    }
+
+
+    // hotdogs $4, fries $3.50, soda $1.50, sauerkraut $1
+    var menuList = [];
+    menuList.push(new MenuItem("hotdog", 4));
+    menuList.push(new MenuItem("fries", 3.50));
+    menuList.push(new MenuItem("soda", 1.50));
+    menuList.push(new MenuItem("sauerkraut", 1));
+
+   // Create an associative array to keep track of item counts in the cart
+   var cartItemsCount = [];
+   for (var item of menuList) {
+        // Initialize count for each item to 0
+       cartItemsCount[item.name] = 0; 
+    }
+
+    document.write(printMenu(menuList));
+
+
+    document.write('<label for="menu">Choose an item:</label>');
+    document.write('<select id="menu" name="menu">');
+    for (var item of menuList) {
+        document.write('<option value="' + item.price + '">' + item.name + '</option>');
+    }
+    document.write('</select>');
+    document.write('<br><br>');
+    document.write('<button id="addToCart" onclick="addToCart()">Add to Cart</button>');
+    document.write('<div id="cart"><h3>Shopping Cart</h3><ul id="cartItems"></ul></div>');
+    document.write('<button id="checkout" onclick="checkout()">Checkout</button>');
+
+</script>
+</head>
+
+<body>
+	
+</body>
+</html>

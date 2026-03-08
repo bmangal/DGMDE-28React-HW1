@@ -1,0 +1,75 @@
+<!-- https://bmangal.github.io/DGMDE-28React-HW1/HW6/joes1.html -->
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Class Demo</title>
+<script>
+
+	// hotdogs $4, fries $3.50, soda $1.50, sauerkraut $1
+
+    // Associative array to hold menu items and prices
+    var menu1 = [];
+    menu1["hotdog"] = 4;
+    menu1["fries"] = 3.50;
+    menu1["soda"] = 1.50;
+    menu1["sauerkraut"] = 1;
+
+    // JS Objects are associative arrays, so we can use the same function to display both
+    var menu2 = {
+        hotdog: 4,
+        fries: 3.50,
+        soda: 1.50,
+        sauerkraut: 1
+    };
+
+    // Function to display Associative array menu items and prices
+    function displayMenu(title, menu) {
+        var s = title + ":<br><ul>";
+        for (var item in menu) {
+            s += "<li>" + item + ": $" + menu[item] + "</li>";
+        }
+        s += "</ul>";
+        document.write(s);
+    }
+
+    // Class to represent a menu item with name and price
+	class MenuItem
+	{
+		name;
+        price;
+		
+		constructor(name, price)
+        {
+            this.name = name;
+            this.price = price;
+        }   
+		showMenuItem() 
+		{
+			var s = this.name + ": $" + this.price
+			return s
+		}
+	}
+
+    displayMenu("Menu (Associative Array)", menu1)
+    displayMenu("Menu (JS Object)", menu2)
+
+   var menu3 = [];
+   menu3.push(new MenuItem("hotdog", 4));
+   menu3.push(new MenuItem("fries", 3.50));
+   menu3.push(new MenuItem("soda", 1.50));
+   menu3.push(new MenuItem("sauerkraut", 1));
+
+   document.write("Menu (Class Array):<br><ul>");
+   for (var item of menu3) {
+       document.write("<li>" + item.showMenuItem() + "</li>");
+   }
+   document.write("</ul>");
+
+</script>
+</head>
+
+<body>
+	
+</body>
+</html>
