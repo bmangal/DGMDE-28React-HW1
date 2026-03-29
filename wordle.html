@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle</title>
+    <style>
+
+        .container {
+            text-align: center;
+            padding: 30px;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 16px;
+            width: 200px;
+            border: 2px solid #ddd;
+            text-transform: uppercase; /* Automatically convert input to uppercase */
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-left: 10px;
+            font-size: 16px;
+            background-color: #65a8d4;
+            border: none;
+        }
+
+        .restart-btn {
+            background-color: #d86f78;
+        }
+
+        .guess-row, .guess-row-small {
+            display: flex;
+            justify-content: center;
+        }
+        .guess-row {
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .guess-row-small {
+            gap: 2px;
+            margin-bottom: 3px;
+        }
+
+        .letter-tile, .letter-tile-small {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .letter-tile {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ccc;
+            font-size: 24px;
+        }
+        .letter-tile-small {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+            font-size: 12px;
+        }
+
+        .correct {
+            background-color: #6aaa64;
+            border-color: #6aaa64;
+        }
+
+        .present {
+            background-color: #c9b458;
+            border-color: #c9b458;
+        }
+
+        .absent {
+            background-color: #d3d6da;
+            border-color: #d3d6da;
+        }
+
+        .message {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+            min-height: 30px;
+        }
+
+        .success {
+            color: #6aaa64;
+        }
+
+        .error {
+            color: #d32f2f;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Wordle</h1>
+        <div class="game-info">
+            <p>Guess the 5-letter word in 6 attempts</p>
+            <p>Attempts left: <span id="triesLeft">6</span></p>
+            <div id="stats"></div>
+        </div>
+
+        <div class="guesses-container" id="guessesContainer"></div>
+
+        <div class="input-section">
+            <input type="text" id="guessInput"  maxlength="5">
+            <button id="guess" onclick="checkMyGuess()">Check my Guess</button>
+        </div>
+
+        <div class="message" id="message"></div>
+        <button class="restart-btn" onclick="newGame()">Restart Game</button>
+        <button style="background-color: gray;" onclick="resetStats()">Reset Stats</button>
+    </div>
+
+    <script>        
+        const MAX_TRIES = 6;
+        const MAX_WORD_LENGTH = 5;
+        let answerWord = '';
+        let guesses = [];
+        let triesLeft;
+        
+        // Function to start a new game
+        function newGame() {
+            // Call API to get a new word and set it as the answer
+            generateWordByApi(MAX_WORD_LENGTH);
+
+            // Enable input and buttons, and reset message
+            document.getElementById('guessInput').disabled = false;
+            document.getElementById('guess').disabled = false;
+            document.getElementById('message').textContent = '';
+
+            // Reset guesses and tries left
+            guesses = [];
+            triesLeft = MAX_TRIES;
+
+            // Refresh the game display and keyboard display
+            clearGuessInputAndFocus();
+            updateGameDisplay();
+            updateKeyboardDisplay();
+            displayStats();
+        }
+
+        // Call API to get a random word of specified length and set it as the answer
+        function generateWordByApi(wordLength) {
+
+            fetch(`https://random-word-api.herokuapp.com/word?length=${wordLength}`)
+                .then(res => res.json())
+                .then(data => {
+                    // Log the API response to verify the structure and content
+                    console.log('API Response:', data);
+
+                    // Check if the response contains a valid word and set it as the answer
+                    if (data && data.length > 0) {
+                        answerWord = data[0].toUpperCase();
+                        console.log(`Answer Word from API: ${answerWord}`);
+                    }
+                })
+                .catch(error => {
+                    // Log any errors that occur during the API call
+                    console.error('Error fetching word from API:', error);
+                });
+        }
+
+        // Get any error by validating the user's guess
+        function validateGuess(guess) {
+            // Check if the guess contains only alphabetic characters
+            if (!/^[A-Z]+$/.test(guess)) {
+                return 'Please enter only alphabetic characters';
+            }
+            // Check if the guess is of the correct length
+            if (guess.length !== MAX_WORD_LENGTH) {
+                return `Please enter a ${MAX_WORD_LENGTH} letter word`;
+            }
+            return null;
+        }
+
+        // Check the user's guess against the answer word and update the game state accordingly
+        function checkMyGuess() {
+            // Get the user's guess and the container for displaying guesses and message element
+            let container = document.getElementById('guessesContainer');
+            let input = document.getElementById('guessInput').value.toUpperCase();
+            let messageEl = document.getElementById('message');
+
+            // Clear any previous messages
+            messageEl.textContent = '';
+            //messageEl.className = 'message';
+
+            var validationError = validateGuess(input);
+            if (validationError) {
+                messageEl.textContent = validationError;
+                messageEl.classList.add('error');
+                return;
+            }
+                
+            // Add the guess to the list of guesses.
+            guesses.push(input);
+            // Decrease the number of tries left.
+            triesLeft--;
+
+            // Check if the player has won or lost and update the message
+            if (didPlayerWin()) {
+                messageEl.textContent = `Congratulations! You won in ${MAX_TRIES - triesLeft} attempts!`;
+                messageEl.classList.add('success');
+                endGame();
+            } else if (didPlayerLose()) {
+                messageEl.textContent = `Game Over! The word was ${answerWord}`;
+                messageEl.classList.add('error');
+                endGame();
+            }
+
+            // Refresh the game display and keyboard display
+            clearGuessInputAndFocus();
+            updateGameDisplay();
+            updateKeyboardDisplay();
+        }
+
+        // Clear the guess input field and set focus back to it
+        function clearGuessInputAndFocus() {
+            let input = document.getElementById('guessInput');
+            input.value = '';
+            input.focus();
+        }
+
+        // Check if the player's last guess matches the answer word
+        function didPlayerWin() {
+            return guesses[guesses.length - 1] === answerWord;        
+        }
+
+        // Check if the player has used all attempts without guessing the answer word
+        function didPlayerLose() {
+            return triesLeft === 0 && guesses[guesses.length - 1] !== answerWord;
+        }
+
+        // Disable the input and guess button to end the game
+        function endGame() {
+            document.getElementById('guessInput').disabled = true;
+            document.getElementById('guess').disabled = true;
+
+            // Update the stats value in local storage based on whether the player won or lost
+            // Retrieve the current stats from local storage, increment the games played, and if the player won, increment the games won as well. Then save the updated stats back to local storage.
+            // If there are no existing stats in local storage, it initializes them to 0.
+            let gamesWon = localStorage.getItem('gamesWon') || 0;
+            let gamesPlayed = localStorage.getItem('gamesPlayed') || 0;
+            gamesPlayed++;
+            localStorage.setItem('gamesPlayed', gamesPlayed);
+            if (didPlayerWin()) {
+                gamesWon++;
+                localStorage.setItem('gamesWon', gamesWon);
+            }
+            displayStats();
+        }
+
+        // Display the player's game statistics (games won and games played) on the page.
+        // This function retrieves the stats from local storage and updates the stats display element with the current values.
+        // If there are no games played, it will not display any stats.
+        function displayStats() {
+            let gamesWon = localStorage.getItem('gamesWon') || 0;
+            let gamesPlayed = localStorage.getItem('gamesPlayed') || 0;
+
+            if (gamesPlayed > 0) {
+                document.getElementById('stats').textContent = `You won ${gamesWon} out of ${gamesPlayed} games.`;
+            }
+        }
+
+        // Reset the player's game statistics by setting the games won and games played values in local storage back to 0, and then update the stats display on the page.
+        function resetStats() {
+            localStorage.setItem('gamesWon', 0);
+            localStorage.setItem('gamesPlayed', 0);
+            displayStats();
+        }
+
+        // Update the display of guesses and the number of tries left
+        function updateGameDisplay() {
+            let container = document.getElementById('guessesContainer');
+            container.innerHTML = '';
+
+            for (let i = 0; i < MAX_TRIES; i++) {
+                let row = document.createElement('div');
+                row.className = 'guess-row';
+
+                for (let j = 0; j < MAX_WORD_LENGTH; j++) {
+                    let tile = document.createElement('div');
+                    tile.className = 'letter-tile';
+
+                    if (i < guesses.length) {
+                        let letter = guesses[i][j];
+                        tile.textContent = letter;
+
+                        if (letter === answerWord[j]) {
+                            tile.classList.add('correct');
+                        } else if (answerWord.includes(letter)) {
+                            tile.classList.add('present');
+                        } else {
+                            tile.classList.add('absent');
+                        }
+                    }
+
+                    row.appendChild(tile);
+                }
+
+                container.appendChild(row);
+            }
+
+            document.getElementById('triesLeft').textContent = triesLeft;
+        }
+
+        // Update the display of the on-screen keyboard based on the player's guesses
+        function updateKeyboardDisplay() {
+            const alphabets = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+            let keyboardContainer = document.getElementById('keyboardContainer');
+            
+            if (!keyboardContainer) {
+                let container = document.querySelector('.container');
+                let kb = document.createElement('div');
+                kb.id = 'keyboardContainer';
+                kb.className = 'keyboard';
+                container.insertBefore(kb, document.getElementById('guessesContainer').nextSibling);
+            }
+            
+            let kb = document.getElementById('keyboardContainer');
+            kb.innerHTML = '';
+            
+            for (let i = 0; i < alphabets.length; i++) {
+                let row = document.createElement('div');
+                row.className = 'guess-row-small';
+
+                var rowAlphabets = alphabets[i].split('');
+
+                rowAlphabets.forEach(letter => {
+                    let button = document.createElement('div');
+                        button.textContent = letter;
+                        
+                        for (let i = guesses.length - 1; i >= 0; i--) {
+                        if (guesses[i].includes(letter)) {
+                            if (answerWord[guesses[i].indexOf(letter)] === letter) {
+                                button.className = 'correct';
+                            } else if (answerWord.includes(letter)) {
+                                if (!button.classList.contains('correct')) {
+                                    button.className = 'present';
+                                }
+                            } else {
+                                if (!button.classList.contains('correct') && !button.classList.contains('present')) {
+                                button.className = 'absent';
+                                }
+                            }
+                        }
+                    }
+
+                    button.classList.add('letter-tile-small');
+                    row.appendChild(button);
+                });
+                kb.appendChild(row);
+            }
+        }
+
+        // Start the first game when the page loads
+        newGame();
+    </script>
+</body>
+</html>
