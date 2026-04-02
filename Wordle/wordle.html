@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wordle</title>
     <style>
-
+        @media (max-width: 700px) 
+        {
+        }
         .container {
             text-align: center;
             padding: 30px;
@@ -98,7 +100,7 @@
     <div class="container">
         <h1>Wordle</h1>
         <div class="game-info">
-            <p>Guess the 5-letter word in 6 attempts</p>
+            <p id="header1">Guess the 5-letter word in 6 attempts</p>
             <p>Attempts left: <span id="triesLeft">6</span></p>
             <div id="stats"></div>
         </div>
@@ -115,66 +117,106 @@
         <button style="background-color: gray;" onclick="resetStats()">Reset Stats</button>
     </div>
 
-    <script>        
+    <script>
+        
+        // Game class to manage the state and logic of a single instance of the Wordle game.
+        function Game(maxTries, maxWordLength) {
+            this.maxTries = maxTries;
+            this.maxWordLength = maxWordLength;
+            this.answerWord = '';
+            this.guesses = [];
+            this.triesLeft = maxTries;
+
+            // Reset the game state to start a new game, including generating a new answer word and resetting guesses and tries left.
+            this.resetGame = async function() {
+                this.answerWord = '';
+
+                // Reset guesses and tries left to their initial values 
+                this.guesses = [];
+                this.triesLeft = this.maxTries;
+            
+                this.answerWord = await this.generateWordByApi1(this.maxWordLength);
+                console.log(`Answer Word : ${this.answerWord}`);
+            }
+
+            // Call API to get a random word of specified length and set it as the answer
+            this.generateWordByApi1 = async function(wordLength) {
+
+                let word = ''; // Set a default word in case of API failure
+
+                await fetch(`https://random-word-api.herokuapp.com/word?length=${wordLength}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        // Log the API response to verify the structure and content
+                        console.log('API Response:', data);
+
+                        // Check if the response contains a valid word and set it as the answer
+                        if (data && data.length > 0) {
+                            word = data[0].toUpperCase();
+                            console.log(`Answer Word from API: ${word}`);
+                        }
+                    })
+                    .catch(error => {
+                        // Log any errors that occur during the API call
+                        console.error('Error fetching word from API:', error);
+                    });
+
+                return word;
+            }
+
+            // Get any error by validating the user's guess
+            this.validateGuess = function(guess) {
+                // Check if the guess contains only alphabetic characters
+                if (!/^[A-Z]+$/.test(guess)) {
+                    return 'Please enter only alphabetic characters';
+                }
+                // Check if the guess is of the correct length
+                if (guess.length !== MAX_WORD_LENGTH) {
+                    return `Please enter a ${MAX_WORD_LENGTH} letter word`;
+                }
+                return null;
+            }
+        
+            // Add the player's guess to the list of guesses and decrease the number of tries left
+            this.addGuess = function(input) {
+                // Add the guess to the list of guesses.
+                this.guesses.push(input);
+                // Decrease the number of tries left.
+                this.triesLeft--;
+            }
+
+            // Check if the player's last guess matches the answer word
+            this.didPlayerWin = function() {
+                return this.guesses[this.guesses.length - 1] === this.answerWord;        
+            }
+
+            // Check if the player has used all attempts without guessing the answer word
+            this.didPlayerLose = function() {
+                return this.triesLeft === 0 && this.guesses[this.guesses.length - 1] !== this.answerWord;
+            }
+        } // Game class
+
+
         const MAX_TRIES = 6;
         const MAX_WORD_LENGTH = 5;
-        let answerWord = '';
-        let guesses = [];
-        let triesLeft;
-        
+        let game = new Game(MAX_TRIES, MAX_WORD_LENGTH);
+
         // Function to start a new game
         function newGame() {
-            // Call API to get a new word and set it as the answer
-            generateWordByApi(MAX_WORD_LENGTH);
+            // Reset the game state
+            game.resetGame();
 
+            // Update global variables with the new game state
             // Enable input and buttons, and reset message
             document.getElementById('guessInput').disabled = false;
             document.getElementById('guess').disabled = false;
             document.getElementById('message').textContent = '';
-
-            // Reset guesses and tries left
-            guesses = [];
-            triesLeft = MAX_TRIES;
 
             // Refresh the game display and keyboard display
             clearGuessInputAndFocus();
             updateGameDisplay();
             updateKeyboardDisplay();
             displayStats();
-        }
-
-        // Call API to get a random word of specified length and set it as the answer
-        function generateWordByApi(wordLength) {
-
-            fetch(`https://random-word-api.herokuapp.com/word?length=${wordLength}`)
-                .then(res => res.json())
-                .then(data => {
-                    // Log the API response to verify the structure and content
-                    console.log('API Response:', data);
-
-                    // Check if the response contains a valid word and set it as the answer
-                    if (data && data.length > 0) {
-                        answerWord = data[0].toUpperCase();
-                        console.log(`Answer Word from API: ${answerWord}`);
-                    }
-                })
-                .catch(error => {
-                    // Log any errors that occur during the API call
-                    console.error('Error fetching word from API:', error);
-                });
-        }
-
-        // Get any error by validating the user's guess
-        function validateGuess(guess) {
-            // Check if the guess contains only alphabetic characters
-            if (!/^[A-Z]+$/.test(guess)) {
-                return 'Please enter only alphabetic characters';
-            }
-            // Check if the guess is of the correct length
-            if (guess.length !== MAX_WORD_LENGTH) {
-                return `Please enter a ${MAX_WORD_LENGTH} letter word`;
-            }
-            return null;
         }
 
         // Check the user's guess against the answer word and update the game state accordingly
@@ -186,9 +228,8 @@
 
             // Clear any previous messages
             messageEl.textContent = '';
-            //messageEl.className = 'message';
 
-            var validationError = validateGuess(input);
+            var validationError = game.validateGuess(input);
             if (validationError) {
                 messageEl.textContent = validationError;
                 messageEl.classList.add('error');
@@ -196,17 +237,15 @@
             }
                 
             // Add the guess to the list of guesses.
-            guesses.push(input);
-            // Decrease the number of tries left.
-            triesLeft--;
+            game.addGuess(input);
 
             // Check if the player has won or lost and update the message
-            if (didPlayerWin()) {
-                messageEl.textContent = `Congratulations! You won in ${MAX_TRIES - triesLeft} attempts!`;
+            if (game.didPlayerWin()) {
+                messageEl.textContent = `Congratulations! You won in ${MAX_TRIES - game.triesLeft} attempts!`;
                 messageEl.classList.add('success');
                 endGame();
-            } else if (didPlayerLose()) {
-                messageEl.textContent = `Game Over! The word was ${answerWord}`;
+            } else if (game.didPlayerLose()) {
+                messageEl.textContent = `Game Over! The word was ${game.answerWord}`;
                 messageEl.classList.add('error');
                 endGame();
             }
@@ -224,16 +263,6 @@
             input.focus();
         }
 
-        // Check if the player's last guess matches the answer word
-        function didPlayerWin() {
-            return guesses[guesses.length - 1] === answerWord;        
-        }
-
-        // Check if the player has used all attempts without guessing the answer word
-        function didPlayerLose() {
-            return triesLeft === 0 && guesses[guesses.length - 1] !== answerWord;
-        }
-
         // Disable the input and guess button to end the game
         function endGame() {
             document.getElementById('guessInput').disabled = true;
@@ -246,7 +275,7 @@
             let gamesPlayed = localStorage.getItem('gamesPlayed') || 0;
             gamesPlayed++;
             localStorage.setItem('gamesPlayed', gamesPlayed);
-            if (didPlayerWin()) {
+            if (game.didPlayerWin()) {
                 gamesWon++;
                 localStorage.setItem('gamesWon', gamesWon);
             }
@@ -261,7 +290,10 @@
             let gamesPlayed = localStorage.getItem('gamesPlayed') || 0;
 
             if (gamesPlayed > 0) {
-                document.getElementById('stats').textContent = `You won ${gamesWon} out of ${gamesPlayed} games.`;
+                document.getElementById('stats').textContent = `You won ${gamesWon} out of ${gamesPlayed} games`;
+            }
+            else {
+                document.getElementById('stats').textContent = '';
             }
         }
 
@@ -285,13 +317,13 @@
                     let tile = document.createElement('div');
                     tile.className = 'letter-tile';
 
-                    if (i < guesses.length) {
-                        let letter = guesses[i][j];
+                    if (i < game.guesses.length) {
+                        let letter = game.guesses[i][j];
                         tile.textContent = letter;
 
-                        if (letter === answerWord[j]) {
+                        if (letter === game.answerWord[j]) {
                             tile.classList.add('correct');
-                        } else if (answerWord.includes(letter)) {
+                        } else if (game.answerWord.includes(letter)) {
                             tile.classList.add('present');
                         } else {
                             tile.classList.add('absent');
@@ -304,7 +336,7 @@
                 container.appendChild(row);
             }
 
-            document.getElementById('triesLeft').textContent = triesLeft;
+            document.getElementById('triesLeft').textContent = game.triesLeft;
         }
 
         // Update the display of the on-screen keyboard based on the player's guesses
@@ -333,11 +365,11 @@
                     let button = document.createElement('div');
                         button.textContent = letter;
                         
-                        for (let i = guesses.length - 1; i >= 0; i--) {
-                        if (guesses[i].includes(letter)) {
-                            if (answerWord[guesses[i].indexOf(letter)] === letter) {
+                        for (let i = game.guesses.length - 1; i >= 0; i--) {
+                        if (game.guesses[i].includes(letter)) {
+                            if (game.answerWord[game.guesses[i].indexOf(letter)] === letter) {
                                 button.className = 'correct';
-                            } else if (answerWord.includes(letter)) {
+                            } else if (game.answerWord.includes(letter)) {
                                 if (!button.classList.contains('correct')) {
                                     button.className = 'present';
                                 }
@@ -357,7 +389,12 @@
         }
 
         // Start the first game when the page loads
-        newGame();
+        window.onload = function() {
+            var messageEl = document.getElementById('message');
+            newGame();
+            document.getElementById('header1').textContent = `Guess the ${MAX_WORD_LENGTH}-letter word in ${MAX_TRIES} attempts`;
+        }
+
     </script>
 </body>
 </html>
