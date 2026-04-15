@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle</title>
+    <style>
+        .container {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .guess-row, .guess-row-small {
+            display: flex;
+            justify-content: center;
+        }
+        .guess-row {
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .guess-row-small {
+            gap: 2px;
+            margin-bottom: 3px;
+        }
+
+        .letter-tile, .letter-tile-small {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .letter-tile {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ccc;
+            font-size: 24px;
+        }
+        .letter-tile-small {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+            font-size: 12px;
+        }
+
+        .correct {
+            background-color: #6aaa64;
+            border-color: #6aaa64;
+        }
+
+        .present {
+            background-color: #c9b458;
+            border-color: #c9b458;
+        }
+
+        .absent {
+            background-color: #d3d6da;
+            border-color: #d3d6da;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Wordle</h1>
+        <div>
+            <div id="header1"></div>
+            <div id="attemptsLeft"></div>
+        </div>
+
+        <div id="guessesContainer"></div>
+        <div id="keyboardContainer"></div>
+    </div>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script>
+        // Game class to manage the state and logic of a single instance of the Wordle game.
+        function Game(maxTries, maxWordLength, word) {
+            this.maxTries = maxTries;
+            this.maxWordLength = maxWordLength;
+            this.answerWord = '';
+            this.guesses = [];
+            this.triesLeft = maxTries;
+            this.answerWord = word.toUpperCase();
+            console.log(`Answer Word : ${this.answerWord}`);
+        
+            // Add the player's guess to the list of guesses and decrease the number of tries left
+            this.addGuess = function(input) {
+                // Add the guess to the list of guesses.
+                this.guesses.push(input.toUpperCase());
+                // Decrease the number of tries left.
+                this.triesLeft--;
+            }
+
+            this.getTileClass = function(row, col) {
+                if (row < this.guesses.length) {
+                    let letter = this.guesses[row][col];
+                    if (letter === this.answerWord[col]) {
+                        return 'correct';
+                    } else if (this.answerWord.includes(letter)) {
+                        return 'present';
+                    } else {
+                        return 'absent';
+                    }
+                }
+                return '';
+            }
+
+            this.getKeyboardKeyClass = function(letter) {
+                let keyClass = '';
+                for (let i = game.guesses.length - 1; i >= 0; i--) {
+                    if (game.guesses[i].includes(letter)) {
+                        if (game.answerWord[game.guesses[i].indexOf(letter)] === letter) {
+                            keyClass = 'correct';
+                            break;
+                        } else if (game.answerWord.includes(letter)) {
+                            if (!keyClass.includes('correct')) {
+                                keyClass = 'present';
+                            }
+                        } else {
+                            if (!keyClass.includes('correct') && !keyClass.includes('present')) {
+                                keyClass = 'absent';
+                            }
+                        }
+                    }
+                }
+                return keyClass;
+            }
+
+        } // Game class
+    </script>
+
+    <script type="text/babel">
+
+        const MAX_TRIES = 6;
+        const MAX_WORD_LENGTH = 5;
+        let game;
+
+        // Update the display of guesses and the number of tries left
+        function updateGameDisplay() {
+            // Create guess elements using React
+            let container = document.getElementById('guessesContainer');
+            let guessElements = [];
+
+            for (let i = 0; i < MAX_TRIES; i++) {
+                let tiles = [];
+                
+                for (let j = 0; j < MAX_WORD_LENGTH; j++) {
+                    // Create a tile element for each letter in the guess
+                    let letter = i < game.guesses.length ? game.guesses[i][j] : '';
+                    let tileClass = 'letter-tile ' + game.getTileClass(i, j);
+
+                    let tileElement = <div key={j} className={tileClass}>{letter}</div>;
+                    tiles.push(tileElement);
+                }                
+
+                // Create a row element for each guess and add the tiles to it
+                let rowElement = <div key={i} className="guess-row">{tiles}</div>;
+                guessElements.push(rowElement);
+           }
+
+            // Render the guess elements using React JSX
+            let root = ReactDOM.createRoot(container);
+            root.render(guessElements);
+
+            // Update the number of tries left
+            let triesLeftElement = <div>Attempts left: {game.triesLeft}</div>;
+            let triesLeftContainer = document.getElementById('attemptsLeft');
+            root = ReactDOM.createRoot(triesLeftContainer);
+            root.render(triesLeftElement);
+        }
+
+        // Update the display of the on-screen keyboard based on the player's guesses        
+        function updateKeyboardDisplay() {
+            const alphabets = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+            // Create keyboard elements using React
+            
+            let keyboardRows = alphabets.map(row => {
+                let keys = row.split('').map(letter => {
+                    // Create a key element for each letter in the keyboard
+                    let keyClass = 'letter-tile-small ' + game.getKeyboardKeyClass(letter);   
+
+                    return <div key={letter} className={keyClass}>{letter}</div>;
+                }); // for each letter in the row
+
+                return <div key={row} className="guess-row-small">{keys}</div>;
+            }); //for each row in the keyboard
+            
+            let container = document.getElementById('keyboardContainer');
+            let root = ReactDOM.createRoot(container);
+            root.render(keyboardRows);
+       }
+
+        // Start the first game when the page loads
+        window.onload = function() {
+            //var guesses = ['MIGHT', 'FLOOD', 'STRAY'];
+            var guesses = ['might', 'flood', 'stray'];
+            // Initialize the game with a predefined answer word and some guesses for testing
+            game = new Game(MAX_TRIES, MAX_WORD_LENGTH, 'moody');
+
+            // Add the guess to the list of guesses.
+            guesses.forEach(guess => game.addGuess(guess));
+
+            // Refresh the game display and keyboard display
+            updateGameDisplay();
+            updateKeyboardDisplay();
+
+            // Display the header message using React
+            let header1 = document.getElementById('header1');
+            let root = ReactDOM.createRoot(header1);
+            root.render(<div>Guess the {MAX_WORD_LENGTH}-letter word in {MAX_TRIES} attempts</div>);
+        }
+
+    </script>
+</body>
+</html>
